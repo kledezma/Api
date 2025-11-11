@@ -21,6 +21,17 @@ namespace WebApi.Controllers
             return await context.Autores.ToListAsync();
         }
 
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Autor>> Get(int id)
+        {
+            var autor = await context.Autores.Include(x => x.Libros).FirstOrDefaultAsync(x => x.Id == id);
+            if (autor == null)
+            {
+                return NotFound();
+            }
+            return autor;
+        }
+        
         [HttpPost]
         public async Task<IActionResult> Post(Autor autor)
         {
@@ -37,17 +48,28 @@ namespace WebApi.Controllers
         }
 
         // PUT: api/autores/{id}
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] object autor)
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, Autor autor)
         {
-            return NoContent();
+            if (id != autor.Id)
+            {
+                return BadRequest("El id del autor no coincide con el id de la URL.");
+            }
+            context.Update(autor);
+            await context.SaveChangesAsync();
+            return Ok();
         }
 
         // DELETE: api/autores/{id}
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [HttpDelete("{id:int}")]
+        public  async Task<IActionResult> Delete(int id)
         {
-            return NoContent();
+            var registroBorrado = await context.Autores.Where(x => x.Id == id).ExecuteDeleteAsync();
+            if (registroBorrado == 0)
+            {
+                return NotFound();
+            }   
+            return Ok();
         }
     }
 }
